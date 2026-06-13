@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Pinned Tab Escape",
+  "version": "2.0.0",
+  "description": "Protects pinned tabs from accidental navigation, restores them on startup, and prevents focusing on pinned tabs when closing regular tabs.",
+  "permissions": [
+    "tabs",
+    "webNavigation",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
