@@ -273,6 +273,39 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   await savePinnedTabsState();
 });
 
+// Segédfüggvény URL megnyitására: ha van üres fül, ott nyitjuk meg, egyébként újat hozunk létre
+async function openUrlInNormalTab(windowId, url) {
+  try {
+    const queryInfo = { pinned: false };
+    if (typeof windowId === "number") {
+      queryInfo.windowId = windowId;
+    }
+    const normalTabs = await chrome.tabs.query(queryInfo);
+    const emptyTab = normalTabs.find(tab => {
+      const tabUrl = tab.url || tab.pendingUrl || "";
+      return tabUrl === "chrome://newtab/" || 
+             tabUrl === "edge://newtab/" || 
+             tabUrl === "about:blank" || 
+             tabUrl === "about:newtab" || 
+             tabUrl === "";
+    });
+
+    if (emptyTab) {
+      await chrome.tabs.update(emptyTab.id, { url: url, active: true });
+      console.log(`Üres lap újrahasznosítva (${emptyTab.id}) a következőhöz: ${url}`);
+    } else {
+      const createInfo = { url: url, active: true };
+      if (typeof windowId === "number") {
+        createInfo.windowId = windowId;
+      }
+      await chrome.tabs.create(createInfo);
+      console.log(`Új lap létrehozva a következőhöz: ${url}`);
+    }
+  } catch (err) {
+    console.error("Hiba a lap megnyitásakor/frissítésekor:", err);
+  }
+}
+
 // Címsorból vagy könyvjelzőkből indított külső navigációk eltérítése rögzített lapokon
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   if (details.frameId !== 0) return; // Csak a főoldal navigációt figyeljük
@@ -294,12 +327,8 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
       // Megakadályozzuk a rögzített lap felülírását (visszaállítjuk a rögzített URL-t)
       await chrome.tabs.update(tabId, { url: state.lockedUrl });
 
-      // Megnyitjuk az új URL-t egy új fülön
-      await chrome.tabs.create({
-        windowId: state.windowId,
-        url: details.url,
-        active: true
-      });
+      // Megnyitjuk az új URL-t egy új fülön vagy újrahasznosítunk egy ürest
+      await openUrlInNormalTab(state.windowId, details.url);
       console.log(`Eltérített navigáció rögzített lapról (${tabId}): ${state.lockedUrl} -> ${details.url}`);
     }
   } catch (e) {
@@ -324,10 +353,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "openInNewTab") {
     const windowId = sender.tab?.windowId;
-    chrome.tabs.create({
-      windowId: windowId,
-      url: message.url,
-      active: true
-    }).catch(err => console.error("Hiba a fül megnyitásakor:", err));
+    openUrlInNormalTab(windowId, message.url);
   }
 });
