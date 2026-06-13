@@ -7,10 +7,9 @@ Ez egy kicsi, de rendkívül hasznos Chrome / Edge / Brave kiegészítő, amely 
 A bővítmény három fő védelmi és kényelmi funkciót lát el:
 
 ### 1. Rögzített lap fókusz-védelme lapbezáráskor
-Ha bezársz egy **nem rögzített** lapot, és a böngésző alapértelmezés szerint egy **rögzített lapra** ugrana:
-1. A kiegészítő megpróbál visszaváltani a legutóbb használt (előzményben szereplő) nem rögzített lapra.
-2. Ha az már nincs meg, keres egy másik nyitott nem rögzített lapot.
-3. Ha egyáltalán nincs nem rögzített lap az ablakban, automatikusan nyit egy új, üres lapot.
+Ha bezárod az **utolsó** nem rögzített lapot is, vagy a böngésző egy rögzített lapra akarna ugrani egy lap bezárása után:
+* **Ha egyáltalán nem maradt más nem rögzített lap** az ablakban: a kiegészítő automatikusan nyit egy új, üres lapot pufferként. Ez megakadályozza, hogy rögzített lap váljon aktívvá.
+* **Ha maradt még másik nem rögzített lap** az ablakban: a kiegészítő megpróbál visszaváltani a legutóbb használt (előzményben szereplő) nem rögzített lapra, vagy egy másik nyitott nem rögzített lapra, elkerülve a rögzített lapot.
 
 ### 2. Rögzített lapok helyreállítása indításkor (Kétlépcsős ellenőrzéssel)
 A kiegészítő folyamatosan és észrevétlenül menti a rögzített lapjaid URL-jét és sorrendjét (a `chrome.storage.local` segítségével). 
