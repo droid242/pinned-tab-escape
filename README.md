@@ -12,7 +12,7 @@ Ha bezárod az **utolsó** nem rögzített lapot is, vagy a böngésző egy rög
 * **Ha maradt még másik nem rögzített lap** az ablakban: a kiegészítő megpróbál visszaváltani a legutóbb használt (előzményben szereplő) nem rögzített lapra, vagy egy másik nyitott nem rögzített lapra, elkerülve a rögzített lapot.
 
 ### 2. Rögzített lapok helyreállítása indításkor (Kétlépcsős ellenőrzéssel)
-A kiegészítő folyamatosan és észrevétlenül menti a rögzített lapjaid URL-jét és sorrendjét (a `chrome.storage.local` segítségével). 
+A kiegészítő eseményvezérelt módon (amikor rögzítesz, lezársz, navigálsz vagy átrendezel egy lapot) menti a rögzített lapjaid URL-jét és sorrendjét a háttérben (a `chrome.storage.local` segítségével). 
 * Ha a böngésző indításakor valamilyen hiba miatt a Chrome nem állítaná vissza a rögzített lapjaidat, a kiegészítő ezt automatikusan megteszi az indítást követő **1.5 másodpercben**, majd egy másodlagos ellenőrzést végez **4.0 másodpercben** a duplikációk elkerülésére.
 * **Figyelem**: Ha te magad zársz be vagy oldasz fel (unpin) egy rögzített lapot a munkamenet során, a kiegészítő ezt megjegyzi, és a következő indításnál már nem fogja azt visszaállítani.
 
