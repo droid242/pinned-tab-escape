@@ -23,5 +23,19 @@ If you are on a pinned tab, the extension prevents its content from being replac
 ---
 
 ## Installation on Chrome / Edge / Brave / etc.
+
+### 1. Chrome Web Store
 The extension is available in the Chrome Web Store:  
 [https://chromewebstore.google.com/detail/pinned-tab-escape/bghiomkekbcjojbpokmbckfejaojchcb](https://chromewebstore.google.com/detail/pinned-tab-escape/bghiomkekbcjojbpokmbckfejaojchcb)
+
+### 2. Developer mode (manual installation)
+1. Download / copy the extension files to a permanent folder on your computer.
+2. Open the browser's extensions page:
+   * Chrome/Perplexity Comet: `chrome://extensions`
+   * Edge: `edge://extensions`
+   * Brave: `brave://extensions`
+   * Opera: `opera://extensions`
+   * Vivaldi: `vivaldi://extensions`
+3. Enable the **Developer mode** toggle in the top-right (or left-side) corner.
+4. Click the **Load unpacked** button.
+5. Select the folder that contains the `manifest.json` file.
