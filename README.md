@@ -1,41 +1,27 @@
 # Pinned Tab Escape & Protection (v2.0.0)
 
-Ez egy kicsi, de rendkívül hasznos Chrome / Edge / Brave kiegészítő, amely megvédi és kezeli a rögzített (pinned) lapokat.
+This is a small but extremely useful Chrome / Edge / Brave / etc. extension that protects and manages your pinned tabs.
 
-## Mit csinál?
+## What does it do?
 
-A bővítmény három fő védelmi és kényelmi funkciót lát el:
+The extension performs three key functions:
 
-### 1. Rögzített lap fókusz-védelme lapbezáráskor
-Ha bezárod az **utolsó** nem rögzített lapot is, vagy a böngésző egy rögzített lapra akarna ugrani egy lap bezárása után:
-* **Ha egyáltalán nem maradt más nem rögzített lap** az ablakban: a kiegészítő automatikusan nyit egy új, üres lapot pufferként. Ez megakadályozza, hogy rögzített lap váljon aktívvá.
-* **Ha maradt még másik nem rögzített lap** az ablakban: a kiegészítő megpróbál visszaváltani a legutóbb használt (előzményben szereplő) nem rögzített lapra, vagy egy másik nyitott nem rögzített lapra, elkerülve a rögzített lapot.
+### 1. Pinned tab focus protection when closing tabs
+If you close the **last** unpinned tab, the extension automatically opens a new, empty tab as a buffer. This prevents any pinned tab from becoming active.
 
-### 2. Rögzített lapok helyreállítása indításkor (Kétlépcsős ellenőrzéssel)
-A kiegészítő eseményvezérelt módon (amikor rögzítesz, lezársz, navigálsz vagy átrendezel egy lapot) menti a rögzített lapjaid URL-jét és sorrendjét a háttérben (a `chrome.storage.local` segítségével). 
-* Ha a böngésző indításakor valamilyen hiba miatt a Chrome nem állítaná vissza a rögzített lapjaidat, a kiegészítő ezt automatikusan megteszi az indítást követő **1.5 másodpercben**, majd egy másodlagos ellenőrzést végez **4.0 másodpercben** a duplikációk elkerülésére.
-* **Figyelem**: Ha te magad zársz be vagy oldasz fel (unpin) egy rögzített lapot a munkamenet során, a kiegészítő ezt megjegyzi, és a következő indításnál már nem fogja azt visszaállítani.
+### 2. Restoring pinned tabs on startup *(with two-step verification)*
+The extension saves the URLs and order of your pinned tabs in the background *(using `chrome.storage.local`)* in an event-driven manner *(whenever you pin, unpin, navigate, or reorder a tab)*. 
+* If the browser fails to restore your pinned tabs on startup due to an error, the extension will automatically do so **1.5 seconds** after startup, and perform a secondary check at **4.0 seconds** to avoid duplication.
+* **Warning**: If you manually close or unpin a pinned tab during your session, the extension will remember this and will not restore it on the next startup.
 
-### 3. Navigáció eltérítése rögzített lapokról (Felülírás elleni védelem)
-Ha egy rögzített lapon állsz, a kiegészítő megakadályozza, hogy a lap tartalma lecserélődjön külső navigáció miatt:
-* **Külső linkek**: Ha a rögzített lapon belül (pl. Messengeren) egy külső weboldalra mutató linkre kattintasz, az automatikusan új lapon nyílik meg, a rögzített oldalad pedig érintetlen marad.
-* **Címsor és könyvjelzők**: Ha a rögzített lapon állva véletlenül beírsz egy új URL-t a címsorba vagy rákattintasz egy könyvjelzőre, a kiegészítő eltéríti a navigációt: az új oldal új fülön nyílik meg, a rögzített lap pedig visszaáll a kiinduló URL-re.
-* **Megengedett**: A rögzített lapon belüli (azonos domain alatti) navigáció szabadon működik (pl. Messengeren belül az üzenetek közötti váltás).
-* *Tipp*: Ha szándékosan szeretnél egy rögzített lapon új oldalra navigálni, előbb oldd fel a rögzítést (unpin), navigálj el, majd rögzítsd újra a lapot.
+### 3. Diverting navigation away from pinned tabs *(protection against overwriting)*
+If you are on a pinned tab, the extension prevents its content from being replaced by external navigation:
+* **External links**: If you click on a link pointing to an external website within the pinned tab *(e.g., Mastodon)*, it will automatically open in a new tab, leaving your pinned page untouched.
+* **Address bar and bookmarks**: If you enter a new URL in the address bar or click on a bookmark while on a pinned tab, the extension diverts the navigation: the new page opens in a new tab, and the pinned tab reverts to its original URL.
+* **Allowed**: Navigation within the pinned tab under the same domain works freely *(e.g., switching between messages on Messenger)*.
 
 ---
 
-## Telepítés Chrome / Edge / Brave alatt
-
-1. Töltsd le / másold a kiegészítő fájljait egy fix mappába a gépeden.
-2. Nyisd meg a böngésző kiegészítők oldalát:
-   * Chrome: `chrome://extensions`
-   * Edge: `edge://extensions`
-   * Brave: `brave://extensions`
-3. Kapcsold be a **Developer mode / Fejlesztői mód** opciót a jobb felső (vagy bal oldali) sarokban.
-4. Kattints a **Load unpacked / Kicsomagolt kiterjesztés betöltése** gombra.
-5. Válaszd ki azt a mappát, amelyben a `manifest.json` fájl található.
-
-## Eltávolítás
-
-A kiegészítők oldalon egyszerűen kattints az **Eltávolítás** gombra a "Pinned Tab Escape" kártyáján.
+## Installation on Chrome / Edge / Brave / etc.
+The extension is available in the Chrome Web Store:  
+[https://chromewebstore.google.com/detail/pinned-tab-escape/bghiomkekbcjojbpokmbckfejaojchcb](https://chromewebstore.google.com/detail/pinned-tab-escape/bghiomkekbcjojbpokmbckfejaojchcb)

@@ -1,15 +1,15 @@
 // Pinned Tab Escape / Protection
 // Chrome/Edge/Brave MV3 extension
 //
-// Célok:
-// 1. Rögzített lapvédelem bezáráskor (ha a fókusz rögzített lapra esne, átirányítjuk normál lapra vagy új lapra).
-// 2. Rögzített lapok helyreállítása indításkor kétlépcsős ellenőrzéssel (1.5s és 4s).
-// 3. Navigáció eltérítése rögzített lapokról (címsor, könyvjelzők és külső linkek új lapon nyílnak meg).
+// Goals:
+// 1. Pinned tab protection when closing tabs (redirect focus to a regular or new tab if it would fall on a pinned tab).
+// 2. Restore pinned tabs on startup with a two-step verification (1.5s and 4s).
+// 3. Divert navigation from pinned tabs (address bar, bookmarks, and external links open in a new tab).
 
 const tabState = new Map();       // tabId -> { windowId, pinned, url, lockedUrl }
 const normalHistory = new Map();  // windowId -> [tabId, tabId, ...]
 
-// Rögzített lapok állapotának mentése a storage-ba
+// Save the state of pinned tabs to storage
 async function savePinnedTabsState() {
   try {
     const tabs = await chrome.tabs.query({ pinned: true });
@@ -18,9 +18,9 @@ async function savePinnedTabsState() {
       index: t.index
     }));
     await chrome.storage.local.set({ savedPinnedTabs: pinnedData });
-    console.log("Rögzített lapok mentve:", pinnedData);
+    console.log("Pinned tabs saved:", pinnedData);
   } catch (e) {
-    console.error("Hiba a rögzített lapok mentésekor:", e);
+    console.error("Error saving pinned tabs:", e);
   }
 }
 
@@ -37,10 +37,10 @@ function rememberTab(tab) {
         const oldHost = new URL(lockedUrl).hostname;
         const newHost = new URL(tab.url).hostname;
         if (oldHost === newHost) {
-          lockedUrl = tab.url; // Frissítjük a zárolt URL-t azonos domainen belüli navigációnál
+          lockedUrl = tab.url; // Update the locked URL during navigation within the same domain
         }
       } catch {
-        // Hiba esetén megtartjuk a régit
+        // Keep the old URL in case of an error
       }
     }
   } else {
@@ -54,9 +54,9 @@ function rememberTab(tab) {
     lockedUrl: lockedUrl
   });
 
-  // Szinkronizáljuk a content scripttel a rögzített állapotot
+  // Sync the pinned state with the content script
   chrome.tabs.sendMessage(tab.id, { action: "setPinned", pinned: Boolean(tab.pinned) }).catch(() => {
-    // Esetleges hiba elnyomása, ha a content script még nem töltődött be a lapon
+    // Suppress errors in case the content script hasn't loaded on the tab yet
   });
 }
 
@@ -77,7 +77,7 @@ function touchNormalTab(tab) {
 
   filtered.unshift(tab.id);
 
-  // Ne nöjön végtelenre.
+  // Avoid growing infinitely.
   normalHistory.set(windowId, filtered.slice(0, 50));
 }
 
@@ -92,7 +92,7 @@ async function getTabSafe(tabId) {
 async function activateBestNormalTab(windowId) {
   const history = normalHistory.get(windowId) || [];
 
-  // 1) Először próbáljuk a legutóbb használt normál lapot.
+  // 1) First, try the most recently used regular tab.
   for (const tabId of history) {
     const tab = await getTabSafe(tabId);
     if (tab && !tab.pinned && tab.windowId === windowId) {
@@ -101,7 +101,7 @@ async function activateBestNormalTab(windowId) {
     }
   }
 
-  // 2) Keresünk bármilyen nem rögzített lapot.
+  // 2) Look for any unpinned tab.
   const normalTabs = await chrome.tabs.query({ windowId, pinned: false });
   const usableTabs = normalTabs.filter(tab => !tab.discarded || typeof tab.discarded === "boolean");
 
@@ -111,7 +111,7 @@ async function activateBestNormalTab(windowId) {
     return true;
   }
 
-  // 3) Ha nincs normál lap, nyissunk egy új üres lapot.
+  // 3) If there are no regular tabs, open a new empty tab.
   await chrome.tabs.create({
     windowId,
     url: "chrome://newtab/",
@@ -122,7 +122,7 @@ async function activateBestNormalTab(windowId) {
   return true;
 }
 
-// Intelligens URL-összehasonlítás a duplikációk elkerülésére
+// Smart URL comparison to avoid duplicates
 function isSimilarUrl(url1, url2) {
   try {
     const u1 = new URL(url1);
@@ -135,7 +135,7 @@ function isSimilarUrl(url1, url2) {
   }
 }
 
-// Helyreállítási logika indításkor
+// Restore logic on startup
 async function restorePinnedTabsIfNeeded() {
   const data = await chrome.storage.local.get("savedPinnedTabs");
   const saved = data.savedPinnedTabs || [];
@@ -158,9 +158,9 @@ async function restorePinnedTabsIfNeeded() {
           active: false,
           index: savedTab.index
         });
-        console.log("Sikeresen helyreállított rögzített lap:", savedTab.url);
+        console.log("Successfully restored pinned tab:", savedTab.url);
       } catch (e) {
-        console.error("Nem sikerült helyreállítani a rögzített lapot:", savedTab.url, e);
+        console.error("Failed to restore pinned tab:", savedTab.url, e);
       }
     }
   }
@@ -176,29 +176,29 @@ async function initializeState() {
   }
 }
 
-// Induláskor töltsük fel az állapotot és mentsük le.
+// Populate the state and save it on startup.
 chrome.runtime.onInstalled.addListener(async () => {
   await initializeState();
   await savePinnedTabsState();
 });
 
-// Kétlépcsős helyreállítás indításkor
+// Two-step restoration on startup
 chrome.runtime.onStartup.addListener(async () => {
-  console.log("Böngésző indítás észlelve, állapot inicializálása és kétlépcsős helyreállítás.");
+  console.log("Browser startup detected, initializing state and running two-step restoration.");
   await initializeState();
 
   setTimeout(async () => {
-    console.log("1. lépcsős helyreállítási ellenőrzés...");
+    console.log("Step 1 restoration check...");
     await restorePinnedTabsIfNeeded();
   }, 1500);
 
   setTimeout(async () => {
-    console.log("2. lépcsős helyreállítási ellenőrzés...");
+    console.log("Step 2 restoration check...");
     await restorePinnedTabsIfNeeded();
   }, 4000);
 });
 
-// Ha létrejön vagy frissül egy lap, jegyezzük meg.
+// Remember the tab when created or updated.
 chrome.tabs.onCreated.addListener(tab => {
   rememberTab(tab);
   if (tab.active && !tab.pinned) {
@@ -228,7 +228,7 @@ chrome.tabs.onMoved.addListener(async (tabId, moveInfo) => {
   }
 });
 
-// Ha aktiválsz egy lapot.
+// When a tab is activated.
 chrome.tabs.onActivated.addListener(async activeInfo => {
   const tab = await getTabSafe(activeInfo.tabId);
   if (!tab) return;
@@ -242,7 +242,7 @@ chrome.tabs.onActivated.addListener(async activeInfo => {
   }
 });
 
-// Bezáráskor ellenőrizzük a helyzetet.
+// Check the state when a tab is closed.
 chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   const old = tabState.get(tabId);
   const windowId = removeInfo.windowId ?? old?.windowId;
@@ -258,7 +258,7 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
     return;
   }
 
-  // A bezárt lap normál lap volt. Adjunk időt a Chrome-nak a fókusz váltásra.
+  // The closed tab was a regular tab. Give Chrome time to switch focus.
   setTimeout(async () => {
     try {
       const [activeTab] = await chrome.tabs.query({ windowId, active: true });
@@ -266,14 +266,14 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
         await activateBestNormalTab(windowId);
       }
     } catch (err) {
-      console.error("Hiba a fókusz korrigálásakor:", err);
+      console.error("Error correcting focus:", err);
     }
   }, 50);
 
   await savePinnedTabsState();
 });
 
-// Segédfüggvény URL megnyitására: ha van üres fül, ott nyitjuk meg, egyébként újat hozunk létre
+// Helper function to open a URL: reuse an empty tab if available, otherwise create a new one
 async function openUrlInNormalTab(windowId, url) {
   try {
     const queryInfo = { pinned: false };
@@ -292,29 +292,29 @@ async function openUrlInNormalTab(windowId, url) {
 
     if (emptyTab) {
       await chrome.tabs.update(emptyTab.id, { url: url, active: true });
-      console.log(`Üres lap újrahasznosítva (${emptyTab.id}) a következőhöz: ${url}`);
+      console.log(`Reused empty tab (${emptyTab.id}) for: ${url}`);
     } else {
       const createInfo = { url: url, active: true };
       if (typeof windowId === "number") {
         createInfo.windowId = windowId;
       }
       await chrome.tabs.create(createInfo);
-      console.log(`Új lap létrehozva a következőhöz: ${url}`);
+      console.log(`New tab created for: ${url}`);
     }
   } catch (err) {
-    console.error("Hiba a lap megnyitásakor/frissítésekor:", err);
+    console.error("Error opening/updating tab:", err);
   }
 }
 
-// Címsorból vagy könyvjelzőkből indított külső navigációk eltérítése rögzített lapokon
+// Divert external navigations initiated from the address bar or bookmarks on pinned tabs
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
-  if (details.frameId !== 0) return; // Csak a főoldal navigációt figyeljük
+  if (details.frameId !== 0) return; // Only monitor main frame navigation
 
   const tabId = details.tabId;
   const state = tabState.get(tabId);
   if (!state || !state.pinned || !state.lockedUrl) return;
 
-  // Kivételek: belső böngésző oldalak és az extension oldalai
+  // Exceptions: internal browser pages and extension pages
   if (details.url.startsWith("chrome://") || details.url.startsWith("chrome-extension://") || details.url.startsWith("about:")) {
     return;
   }
@@ -324,19 +324,19 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     const targetHost = new URL(details.url).hostname;
 
     if (currentHost !== targetHost) {
-      // Megakadályozzuk a rögzített lap felülírását (visszaállítjuk a rögzített URL-t)
+      // Prevent overwriting the pinned tab (restore the pinned URL)
       await chrome.tabs.update(tabId, { url: state.lockedUrl });
 
-      // Megnyitjuk az új URL-t egy új fülön vagy újrahasznosítunk egy ürest
+      // Open the new URL in a new tab or reuse an empty one
       await openUrlInNormalTab(state.windowId, details.url);
-      console.log(`Eltérített navigáció rögzített lapról (${tabId}): ${state.lockedUrl} -> ${details.url}`);
+      console.log(`Diverted navigation from pinned tab (${tabId}): ${state.lockedUrl} -> ${details.url}`);
     }
   } catch (e) {
-    console.error("Hiba az onBeforeNavigate feldolgozásakor:", e);
+    console.error("Error processing onBeforeNavigate:", e);
   }
 });
 
-// Üzenetkezelés a content.js-től
+// Message handling from content.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message) return;
 
@@ -348,7 +348,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else {
       sendResponse({ pinned: false });
     }
-    return true; // Aszinkron válaszküldés engedélyezése
+    return true; // Enable asynchronous response
   }
 
   if (message.action === "openInNewTab") {
