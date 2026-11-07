@@ -1,25 +1,28 @@
 // Pinned Tab Escape - Content Script
-// Intercepts link clicks on pinned tabs to prevent overwriting them.
+// Intercepts link clicks on protected tabs (pinned tabs and tabs in tab groups)
+// to prevent overwriting them and to ensure new pages open outside groups.
 
-let isPinned = false;
+let isProtected = false;
 
-// Check with the background script if this tab is pinned
-chrome.runtime.sendMessage({ action: "checkIfPinned" }, (response) => {
-  if (response && typeof response.pinned === "boolean") {
-    isPinned = response.pinned;
+// Check with the background script if this tab is protected (pinned or in a group)
+chrome.runtime.sendMessage({ action: "checkProtection" }, (response) => {
+  if (response && typeof response.protected === "boolean") {
+    isProtected = response.protected;
   }
 });
 
-// Listen for messages from the background script (if the pin state changes dynamically)
+// Listen for protection state changes dynamically from background script
 chrome.runtime.onMessage.addListener((message) => {
-  if (message && message.action === "setPinned") {
-    isPinned = message.pinned;
+  if (message && typeof message.protected === "boolean") {
+    isProtected = message.protected;
+  } else if (message && typeof message.pinned === "boolean") {
+    isProtected = message.pinned;
   }
 });
 
 // Intercept clicks on the page
 document.addEventListener("click", (event) => {
-  if (!isPinned) return;
+  if (!isProtected) return;
 
   // Find the closest <a> (link) element
   const anchor = event.target.closest("a");
@@ -39,13 +42,15 @@ document.addEventListener("click", (event) => {
     const targetUrl = new URL(anchor.href, window.location.href);
     const currentUrl = new URL(window.location.href);
 
-    // If the target domain differs from the current tab's domain
-    if (targetUrl.hostname !== currentUrl.hostname) {
-      // Prevent navigation on the current tab
+    const isExternal = targetUrl.hostname !== currentUrl.hostname;
+    const opensInNewTab = anchor.target === "_blank" || anchor.target === "_new";
+
+    // If external domain OR the link is set to open in a new tab:
+    // Divert it so it opens in a normal tab OUTSIDE the tab group / pinned state
+    if (isExternal || opensInNewTab) {
       event.preventDefault();
       event.stopPropagation();
 
-      // Request the background script to open the link in a new tab
       chrome.runtime.sendMessage({
         action: "openInNewTab",
         url: targetUrl.href
