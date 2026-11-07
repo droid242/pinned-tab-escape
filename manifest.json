@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Pinned Tab Escape",
   "version": "2.1.0",
-  "description": "Protects pinned tabs and tab groups from accidental navigation, restores their base URLs on startup, and manages tab focus when closing tabs.",
+  "description": "Protects pinned tabs and tab groups from navigation, restores base URLs on startup, and manages focus when closing tabs.",
   "permissions": [
     "tabs",
     "tabGroups",
